@@ -18,32 +18,32 @@ class BAARD(ABC):
     def detect(self, X):
         """Detect adversarial examples."""
         pred = self.predict(X)
-        n = len(X)
-        passed = np.ones(n, dtype=np.int8)
-        encoded_adv = self.encoding(X)
-
+        encoded_adv = self.encoding(X) # returns X right now
         passed = self.def_stage1_(encoded_adv, pred, passed)
-        blocked = len(passed[passed == 0])
-        logger.debug('Stage 1: blocked %d inputs', blocked)
-        # self.blocked_by_stages[0] = blocked
+        passed = self.def_stage2_(encoded_adv, pred, passed)
+        passed = self.def_stage2_(encoded_adv, pred, passed)
 
-    def def_stage1_(self, adv, pred_adv, passed):
-        """
-        A bounding box which uses [min, max] from traning set
-        """
-        if len(np.where(passed == 1)[0]) == 0:
-            return passed
+    def fit(self):
+        """ Fit defense """
+        pass
 
-        for i in range(self.num_classes):
-            indices = np.where(pred_adv == i)[0]
-            x = adv[indices]
-            i_min = self._x_min[i]
-            i_max = self._x_max[i]
-            blocked_indices = np.where(
-                np.all(np.logical_or(x < i_min, x > i_max), axis=1)
-            )[0]
-            if len(blocked_indices) > 0:
-                passed[blocked_indices] = 0
+    def def_stage1_(self, X, pred_adv, passed):
+        """
+        A bounding box which uses [min, max] from training set
+        """
+        return passed
+
+    def def_stage2_(self, X, pred_adv, passed):
+        """
+        Filtering the inputs based on in-class k nearest neighbours.
+        """
+        return passed
+
+    def def_stage3_(self, X, pred_adv, passed):
+        """
+        Checking the class distribution of k nearest neighbours without predicting
+        the inputs. Compute the likelihood using one-against-all approach.
+        """
         return passed
 
     def _log_time_start(self):
